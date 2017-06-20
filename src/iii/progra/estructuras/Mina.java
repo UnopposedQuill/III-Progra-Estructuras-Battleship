@@ -11,7 +11,19 @@ package iii.progra.estructuras;
  */
 public class Mina extends Fabrica{
 
-    public Mina(boolean orientacion, int posicionX, int posicionY) {
+    /**
+     * El hilo que va creando acero
+     */
+    private HiloMina hiloMina;
+    
+    public Mina(boolean orientacion, int posicionX, int posicionY, Jugador jugadorAModificar){
         super(orientacion, posicionX, posicionY);
+        this.hiloMina = new HiloMina(jugadorAModificar);
+    }
+
+    public Mina(boolean orientacion, int posicionX, int posicionY, Jugador jugadorAModificar, int tiempoProduccion, int cantidadProduccion){
+        super(orientacion, posicionX, posicionY);
+        this.hiloMina = hiloMina = new HiloMina(tiempoProduccion, cantidadProduccion, jugadorAModificar);
+        this.hiloMina.start();//arranca la producción de acero
     }
 }
