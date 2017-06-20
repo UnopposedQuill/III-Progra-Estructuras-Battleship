@@ -16,6 +16,10 @@ public class battleship {
      */
     public static void main(String[] args) {
         // TODO code application logic here
+        
+        GrafoObjetos o = new GrafoObjetos();
+        o.agregarVertice(new Conector(0, 0));
+        o.agregarVertice(new FuenteEnergia(25, 0, 0));
+        System.out.println(o.poseeFuenteDeEnergia());
     }
-    
 }
