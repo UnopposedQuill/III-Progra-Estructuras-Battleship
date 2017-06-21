@@ -226,7 +226,7 @@ public class Servidor extends Thread{
                     Partida partidaAModificar = this.encontrarPartidaDelJugador(ataque.getBlancoDelAtaque());
                     System.out.println("Se consiguieron correctamente los datos del ataque");
                     if(ataque.getBlancoDelAtaque().getGrafoPropio().isDanhable()){
-                        int resultado = partidaAModificar.getJugadores().get(partidaAModificar.getJugadores().indexOf(ataque.getBlancoDelAtaque())).getGrafoPropio().agregarDanhos(ataque.getCoordenadaDeAtaque());
+                        int resultado = partidaAModificar.getJugadoresPartida().get(partidaAModificar.getJugadoresPartida().indexOf(ataque.getBlancoDelAtaque())).getGrafoPropio().agregarDanhos(ataque.getCoordenadaDeAtaque());
                         switch (resultado) {
                             case 1:
                                 System.out.println("Se agregaron los daños correctamente");
@@ -321,7 +321,7 @@ public class Servidor extends Thread{
                     Partida partidaAModificar = this.encontrarPartidaDelJugador((Jugador)datosMensaje.get(0));
                     Arma armaAAgregar = (Arma)datosMensaje.get(1);
                     System.out.println("Agregando Arma");
-                    boolean resultado = partidaAModificar.getJugadores().get(partidaAModificar.getJugadores().indexOf((Jugador)datosMensaje.get(0))).agregarArma(armaAAgregar);
+                    boolean resultado = partidaAModificar.getJugadoresPartida().get(partidaAModificar.getJugadoresPartida().indexOf((Jugador)datosMensaje.get(0))).agregarArma(armaAAgregar);
                     if(resultado){
                         System.out.println("Agregado Correcto");
                     }
@@ -341,7 +341,7 @@ public class Servidor extends Thread{
                     System.out.println("Se desea agregar un nuevo elemento");
                     ArrayList <Object> datosMensaje = (ArrayList<Object>)mensajeAAtender.getDatoDeSolicitud();
                     Partida partidaAModificar = this.encontrarPartidaDelJugador((Jugador)datosMensaje.get(0));
-                    Jugador jugadorAModificar = partidaAModificar.getJugadores().get(partidaAModificar.getJugadores().indexOf((Jugador)datosMensaje.get(0)));
+                    Jugador jugadorAModificar = partidaAModificar.getJugadoresPartida().get(partidaAModificar.getJugadoresPartida().indexOf((Jugador)datosMensaje.get(0)));
                     if(datosMensaje.get(1) instanceof Comodin){
                         if(jugadorAModificar.getGrafoPropio().buscarTemplo()){
                             if(jugadorAModificar.getGrafoPropio().isDanhable()){
@@ -404,17 +404,6 @@ public class Servidor extends Thread{
                     }
                     break;
                 }
-                case obtenerPuertoServer: {
-                     mensajeAAtender.setDatoDeRespuesta(this.contador);
-                     this.contador++;
-                     try{
-                        this.flujoDeSalida.writeUnshared(mensajeAAtender);
-                        System.out.println("Mensaje enviado de vuelta correctamente");
-                    } catch (IOException ex) {
-                        Logger.getLogger(Servidor.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                    break;
-                }
             }
         }catch(ClassCastException exc){
             System.out.println("Ocurrió un error a la hora de descifrar alguno de los datos en una solicitud del tipo: " + mensajeAAtender.getTipoDelMensaje().getRepString());
@@ -467,12 +456,12 @@ public class Servidor extends Thread{
      * @param jugadorABuscar El jugador a buscar
      * @return La partida en la que encontró el jugador, o null, si no encontró el jugador
      */
-    private Partida encontrarPartidaDelJugador(Jugador jugadorABuscar){
+    private Partida encontrarPartidaDelJugador(String nombreJugadorABuscar){
         for (int i = 0; i < partidasEnCurso.size(); i++) {
             Partida getPartida = partidasEnCurso.get(i);
-            for (int j = 0; j < getPartida.getJugadores().size(); j++) {
-                Jugador getJugador = getPartida.getJugadores().get(j);
-                if(jugadorABuscar.equals(getJugador)){
+            for (int j = 0; j < getPartida.getJugadoresPartida().size(); j++) {
+                Jugador getJugador = getPartida.getJugadoresPartida().get(j);
+                if(getJugador.equals(nombreJugadorABuscar)){
                     return getPartida;
                 }
             }
@@ -485,8 +474,8 @@ public class Servidor extends Thread{
      * @param partidaANotificar La partida a ser notificada
      */
     public void notificarUsuariosPartida(Partida partidaANotificar){
-        for (int i = 0; i < partidaANotificar.getJugadores().size(); i++) {
-            Jugador get = partidaANotificar.getJugadores().get(i);
+        for (int i = 0; i < partidaANotificar.getJugadoresPartida().size(); i++) {
+            Jugador get = partidaANotificar.getJugadoresPartida().get(i);
             try {
                 OutputStream conexionSalidaSocket = new Socket(get.getIP(),5000).getOutputStream();
                 ObjectOutputStream canalEscritura = new ObjectOutputStream(conexionSalidaSocket);
