@@ -173,7 +173,8 @@ public class Servidor extends Thread{
                     System.out.println("Atendiendo Petición");
                     atenderPeticion(mensajeRecibido, socketNuevo);//hago que el servidor atienda la petición
                 }catch(ClassNotFoundException | ClassCastException excep){
-                    System.out.println("Ocurrió un error a la hora de averiguar el mensaje enviado");
+                    //Logger.getLogger(Servidor.class.getName()).log(Level.SEVERE, null, excep);
+                    System.out.println("Ocurrió un error a la hora de averiguar el mensaje enviado\n".concat(excep.getMessage()));
                 }
                 //Esto es en caso de que el administrador desee pausar el servidor
                 while(this.pausado){
@@ -200,7 +201,7 @@ public class Servidor extends Thread{
             switch(mensajeAAtender.getTipoDelMensaje()){
                 case actualizarTablas:{
                     System.out.println("Se desea actualizar las tablas de cada jugador");
-                    mensajeAAtender.setDatoDeRespuesta(this.encontrarPartidaDelJugador((Jugador)mensajeAAtender.getDatoDeSolicitud()));
+                    mensajeAAtender.setDatoDeRespuesta(this.encontrarPartidaDelJugador(((String)mensajeAAtender.getDatoDeSolicitud())));
                     try{
                         this.flujoDeSalida.writeObject(mensajeAAtender);
                         System.out.println("Mensaje enviado de vuelta correctamente");
@@ -225,28 +226,13 @@ public class Servidor extends Thread{
                     Ataque ataque = (Ataque)mensajeAAtender.getDatoDeSolicitud();
                     Partida partidaAModificar = this.encontrarPartidaDelJugador(ataque.getBlancoDelAtaque());
                     System.out.println("Se consiguieron correctamente los datos del ataque");
-                    if(ataque.getBlancoDelAtaque().getGrafoPropio().isDanhable()){
-                        int resultado = partidaAModificar.getJugadoresPartida().get(partidaAModificar.getJugadoresPartida().indexOf(ataque.getBlancoDelAtaque())).getGrafoPropio().agregarDanhos(ataque.getCoordenadaDeAtaque());
-                        switch (resultado) {
-                            case 1:
-                                System.out.println("Se agregaron los daños correctamente");
-                                break;
-                            case 0:
-                                System.out.println("No se agregaron correctamente los daños");
-                                break;
-                            case 2:
-                                System.out.println("Se agregaron los daños correctamente y pegó en un agujero negro");
-                                break;
-                            case 3:
-                                System.out.println("No se agregaron correctamente los daños pero se pegó en un agujero negro");
-                                break;
-                            default:
-                                break;
-                        }
+                    Jugador jugador = partidaAModificar.getJugador(ataque.getBlancoDelAtaque());
+                    if(jugador.getGrafoPropio().isDanhable()){
+                        boolean resultado = partidaAModificar.getJugadoresPartida().get(partidaAModificar.getJugadoresPartida().indexOf(ataque.getBlancoDelAtaque())).getGrafoPropio().agregarDanhos(ataque.getCoordenadaDeAtaque());
                         mensajeAAtender.setDatoDeRespuesta(resultado);
                     }
                     else{
-                        ataque.getBlancoDelAtaque().getGrafoPropio().reducirDanhable();
+                        jugador.getGrafoPropio().reducirDanhable();
                         mensajeAAtender.setDatoDeRespuesta(false);
                     }
                     try{
@@ -261,7 +247,7 @@ public class Servidor extends Thread{
                     System.out.println("Se desea unirse a una cola");
                     ArrayList <Object> datosMensaje= (ArrayList<Object>)mensajeAAtender.getDatoDeSolicitud();
                     Jugador posibleNuevoJugador = (Jugador)datosMensaje.get(0);
-                    if(this.encontrarPartidaDelJugador(posibleNuevoJugador) == null){//primero verifico si no estaba en otra partida
+                    if(this.encontrarPartidaDelJugador(posibleNuevoJugador.getNombreJugador()) == null){//primero verifico si no estaba en otra partida
                         System.out.println("El jugador no estaba en partida");
                         switch((int)datosMensaje.get(1)){
                             case 2:{
@@ -274,7 +260,11 @@ public class Servidor extends Thread{
                                         jugadorAEmparejar.setNumeroJugador(i);
                                         jugadoresAEmparejar.add(jugadorAEmparejar);
                                     }
-                                    boolean resultado = this.partidasEnCurso.add(new Partida(jugadoresAEmparejar));
+                                    Partida partidaNueva = new Partida();
+                                    partidaNueva.agregarJugadores(jugadoresAEmparejar);
+                                    
+                                    boolean resultado = this.partidasEnCurso.add(partidaNueva);
+                                    partidaNueva.iniciarPartida();
                                     if(resultado){
                                         this.notificarUsuariosPartida(this.partidasEnCurso.get(this.partidasEnCurso.size()-1));
                                     }
@@ -318,10 +308,10 @@ public class Servidor extends Thread{
                 case nuevaArma:{
                     System.out.println("Se desea agregar una nueva arma");
                     ArrayList <Object> datosMensaje = (ArrayList<Object>)mensajeAAtender.getDatoDeSolicitud();
-                    Partida partidaAModificar = this.encontrarPartidaDelJugador((Jugador)datosMensaje.get(0));
+                    Partida partidaAModificar = this.encontrarPartidaDelJugador((String)datosMensaje.get(0));
                     Arma armaAAgregar = (Arma)datosMensaje.get(1);
                     System.out.println("Agregando Arma");
-                    boolean resultado = partidaAModificar.getJugadoresPartida().get(partidaAModificar.getJugadoresPartida().indexOf((Jugador)datosMensaje.get(0))).agregarArma(armaAAgregar);
+                    boolean resultado = partidaAModificar.getJugador((String)datosMensaje.get(0)).agregarArma(armaAAgregar);
                     if(resultado){
                         System.out.println("Agregado Correcto");
                     }
@@ -340,32 +330,8 @@ public class Servidor extends Thread{
                 case nuevoElemento:{
                     System.out.println("Se desea agregar un nuevo elemento");
                     ArrayList <Object> datosMensaje = (ArrayList<Object>)mensajeAAtender.getDatoDeSolicitud();
-                    Partida partidaAModificar = this.encontrarPartidaDelJugador((Jugador)datosMensaje.get(0));
+                    Partida partidaAModificar = this.encontrarPartidaDelJugador(((Jugador)datosMensaje.get(0)).getNombreJugador());
                     Jugador jugadorAModificar = partidaAModificar.getJugadoresPartida().get(partidaAModificar.getJugadoresPartida().indexOf((Jugador)datosMensaje.get(0)));
-                    if(datosMensaje.get(1) instanceof Comodin){
-                        if(jugadorAModificar.getGrafoPropio().buscarTemplo()){
-                            if(jugadorAModificar.getGrafoPropio().isDanhable()){
-                                Comodin comodinAAplicar = (Comodin)datosMensaje.get(1);
-                                jugadorAModificar.getGrafoPropio().setIsDanhable(comodinAAplicar.getGolpesRestantes());
-                                mensajeAAtender.setDatoDeRespuesta(true);
-                                try{
-                                    this.flujoDeSalida.writeObject(mensajeAAtender);
-                                    System.out.println("Mensaje enviado de vuelta correctamente");    
-                                } catch (IOException ex) {
-                                    Logger.getLogger(Servidor.class.getName()).log(Level.SEVERE, null, ex);
-                                }
-                                return;
-                            }
-                        }
-                        mensajeAAtender.setDatoDeRespuesta(false);
-                        try{
-                            this.flujoDeSalida.writeObject(mensajeAAtender);
-                            System.out.println("Mensaje enviado de vuelta correctamente");
-                        } catch (IOException ex) {
-                            Logger.getLogger(Servidor.class.getName()).log(Level.SEVERE, null, ex);
-                        }
-                        return;
-                    }
                     Elemento elementoAAgregar = (Elemento)datosMensaje.get(1);
                     Coordenada posicionConector = (Coordenada)datosMensaje.get(2);
                     if(elementoAAgregar instanceof Fabrica){
@@ -375,7 +341,7 @@ public class Servidor extends Thread{
                     else{
                         
                         System.out.println("Elemento");
-                        jugadorAModificar.getGrafoPropio().agregarNuevoVertice(elementoAAgregar);
+                        jugadorAModificar.getGrafoPropio().agregarVertice(elementoAAgregar);
                         mensajeAAtender.setDatoDeRespuesta(true);
                     }
                     
@@ -391,12 +357,13 @@ public class Servidor extends Thread{
                     System.out.println("Se desea enviar un mensaje de chat");
                     ArrayList <Object> datosMensaje = (ArrayList<Object>)mensajeAAtender.getDatoDeSolicitud();
                     ArrayList <Jugador> jugadoresAEnviarMensaje = (ArrayList<Jugador>)datosMensaje.get(0);
+                    String mensaje = (String)datosMensaje.get(1);
                     for (int i = 0; i < jugadoresAEnviarMensaje.size(); i++) {
                         Jugador get = jugadoresAEnviarMensaje.get(i); 
                         try {
                             OutputStream conexionSalidaSocket = new Socket(get.getIP(),5001).getOutputStream();
                             ObjectOutputStream canalEscritura = new ObjectOutputStream(conexionSalidaSocket);
-                            canalEscritura.writeObject(new Mensaje(TipoMensaje.notificarJugadores, null));
+                            canalEscritura.writeObject(new Mensaje(TipoMensaje.enviarMensaje, mensaje));
                             System.out.println("Mensaje enviado de vuelta correctamente");
                         } catch (IOException ex) {
                             Logger.getLogger(Servidor.class.getName()).log(Level.SEVERE, null, ex);
@@ -404,9 +371,35 @@ public class Servidor extends Thread{
                     }
                     break;
                 }
+                case comodin:{
+                    Partida partidaAModificar = this.encontrarPartidaDelJugador((String)mensajeAAtender.getDatoDeSolicitud());
+                    Jugador jugadorAModificar = partidaAModificar.getJugador((String)mensajeAAtender.getDatoDeSolicitud());
+                    if(jugadorAModificar.getGrafoPropio().poseeTemplo()){
+                        if(jugadorAModificar.getGrafoPropio().isDanhable()){
+                            Random randomizador = new Random();
+                            jugadorAModificar.getGrafoPropio().setIsDanhable((int)randomizador.nextDouble()*3+2);
+                            mensajeAAtender.setDatoDeRespuesta(true);
+                            try{
+                                this.flujoDeSalida.writeObject(mensajeAAtender);
+                                System.out.println("Mensaje enviado de vuelta correctamente");    
+                            } catch (IOException ex) {
+                                Logger.getLogger(Servidor.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                            return;
+                        }
+                    }
+                    mensajeAAtender.setDatoDeRespuesta(false);
+                    try{
+                        this.flujoDeSalida.writeObject(mensajeAAtender);
+                        System.out.println("Mensaje enviado de vuelta correctamente");
+                    } catch (IOException ex) {
+                        Logger.getLogger(Servidor.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
             }
         }catch(ClassCastException exc){
             System.out.println("Ocurrió un error a la hora de descifrar alguno de los datos en una solicitud del tipo: " + mensajeAAtender.getTipoDelMensaje().getRepString());
+            Logger.getLogger(Servidor.class.getName()).log(Level.SEVERE, null, exc);
         }
     }
     
@@ -443,8 +436,11 @@ public class Servidor extends Thread{
                 break;
             }
         }
-        boolean resultado = this.partidasEnCurso.add(new Partida(jugadoresAEmparejar));
+        Partida partida = new Partida();
+        partida.agregarJugadores(jugadoresAEmparejar);
+        boolean resultado = this.partidasEnCurso.add(partida);
         if(resultado){
+            partida.iniciarPartida();
             this.notificarUsuariosPartida(this.partidasEnCurso.get(this.partidasEnCurso.size()-1));
         }
         return resultado;
@@ -477,10 +473,11 @@ public class Servidor extends Thread{
         for (int i = 0; i < partidaANotificar.getJugadoresPartida().size(); i++) {
             Jugador get = partidaANotificar.getJugadoresPartida().get(i);
             try {
-                OutputStream conexionSalidaSocket = new Socket(get.getIP(),5000).getOutputStream();
+                OutputStream conexionSalidaSocket = new Socket(get.getIP(),5001).getOutputStream();
                 ObjectOutputStream canalEscritura = new ObjectOutputStream(conexionSalidaSocket);
                 canalEscritura.writeObject(new Mensaje(TipoMensaje.notificarJugadores, null));
                 System.out.println("Mensaje enviado de vuelta correctamente");
+                canalEscritura.close();
             } catch (IOException ex) {
                 Logger.getLogger(Servidor.class.getName()).log(Level.SEVERE, null, ex);
             }

@@ -21,5 +21,8 @@ public class battleship {
         o.agregarVertice(new Conector(0, 0));
         o.agregarVertice(new FuenteEnergia(25, 0, 0));
         System.out.println(o.poseeFuenteDeEnergia());
+        
+        Servidor s = new Servidor();
+        s.correrServidor();
     }
 }

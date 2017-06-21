@@ -6,13 +6,14 @@
 package iii.progra.estructuras;
 
 //import gui.TipoFabrica; //para poder dibujar bien una matriz de los componentes visuales necesitados
+import gui.TipoFabrica;
 import java.util.*;
 
 /**
  * Los nodos que estarán insertados dentro del grafo, que poseerán un elemento dentro, estas aristas estarán dentro de una lista doble
  * @author Esteban
  */
-class AristaGrafo{
+class AristaGrafo implements java.io.Serializable{
     private Elemento elementoArista;
     private AristaGrafo anterior,siguiente;
 
@@ -80,7 +81,7 @@ public class GrafoObjetos implements java.io.Serializable{
     /**
      * Este entero dirá si es dañable, si es mayor a 0 es indañable, se va reduciendo por 1 con el tiempo
      */
-    private final int isDanhable;
+    private int isDanhable;
 
     /**
      * En este ArrayList se van a guardar temporalmente los daños recibidos hasta que se procesen
@@ -233,5 +234,66 @@ public class GrafoObjetos implements java.io.Serializable{
      */
     public boolean verticeExiste(Coordenada coordenadaBuscar){
         return this.verticesGrafo.contains(null);
+    }
+    
+    public boolean isDanhable(){
+        return this.isDanhable == 0;
+    }
+    
+    public boolean agregarDanhos(ArrayList<Coordenada> danhos){
+        return this.danhos.addAll(danhos);
+    }
+    
+    public void reducirDanhable(){
+        if(this.isDanhable != 0){
+            this.isDanhable--;
+        }
+    }
+
+    public void setIsDanhable(int isDanhable) {
+        this.isDanhable = isDanhable;
+    }
+    
+    public Object[][]generarMatriz(){
+        Object[][] datosRetornar = new Object[15][15];
+        for (int i = 0; i < this.verticesGrafo.size(); i++) {
+            Elemento get = this.verticesGrafo.get(i).getElementoArista();
+            if(get instanceof FuenteEnergia){
+                FuenteEnergia f = (FuenteEnergia)get;
+                datosRetornar[f.getCoordenadas().getX()][f.getCoordenadas().getY()] = TipoFabrica.FUENTE;
+                for (Coordenada coordenadasRestante : f.getCoordenadasRestantes()) {
+                    datosRetornar[coordenadasRestante.getX()][coordenadasRestante.getY()] = TipoFabrica.FUENTE;
+                }
+            }
+            else if(get instanceof Conector){
+                datosRetornar[get.getCoordenadas().getX()][get.getCoordenadas().getY()] = TipoFabrica.CONECTOR;
+            }
+            else if(get instanceof Remolino){
+                datosRetornar[get.getCoordenadas().getX()][get.getCoordenadas().getY()] = TipoFabrica.REMOLINO;
+            }
+        }
+        return datosRetornar;
+    }
+    
+    public ArrayList<Conector> getConectoresDisponibles(){
+        ArrayList<Conector> listaRetornar = new ArrayList<>();
+        for (int i = 0; i < this.verticesGrafo.size(); i++) {
+            Elemento get = this.verticesGrafo.get(i).getElementoArista();
+            if(get instanceof Conector){
+                listaRetornar.add((Conector)get);
+            }
+        }
+        return listaRetornar;
+    }
+    
+    public ArrayList<FuenteEnergia> getFuentesEnergiaDisponibles(){
+        ArrayList<FuenteEnergia> listaRetornar = new ArrayList<>();
+        for (int i = 0; i < this.verticesGrafo.size(); i++) {
+            Elemento get = this.verticesGrafo.get(i).getElementoArista();
+            if(get instanceof FuenteEnergia){
+                listaRetornar.add((FuenteEnergia)get);
+            }
+        }
+        return listaRetornar;
     }
 }

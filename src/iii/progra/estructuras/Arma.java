@@ -11,7 +11,7 @@ package iii.progra.estructuras;
  * @author esteban
  */
 public class Arma implements java.io.Serializable{
-    private final int tipoArma;
+    private final int tipoArma;    
 
     public Arma(int tipoArma) {
         this.tipoArma = tipoArma;

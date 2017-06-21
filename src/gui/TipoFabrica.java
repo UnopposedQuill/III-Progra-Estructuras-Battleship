@@ -12,4 +12,21 @@ package gui;
  */
 public enum TipoFabrica {
     BLANK, MERCADOh1, MINAh1, ARMERIAh1, TEMPLOh1, MERCADOv1, MINAv1, ARMERIAv1, TEMPLOv1, MERCADOh2, MINAh2, ARMERIAh2, TEMPLOh2,MERCADOv2, MINAv2, ARMERIAv2, TEMPLOv2, CONECTOR, FUENTE, REMOLINO;
+    
+    public static String fakeToString(TipoFabrica tipo){
+        switch(tipo){
+            case REMOLINO:{
+                return "agujeroNegro.jpg";
+            }
+            case CONECTOR:{
+                return "conector.jpg";
+            }
+            case FUENTE:{
+                return "tierra1.jpg";
+            }
+            default:{
+                return "cvacio.GIF";
+            }
+        }
+    }
 }

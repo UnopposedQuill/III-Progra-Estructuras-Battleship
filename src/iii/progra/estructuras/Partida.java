@@ -11,7 +11,7 @@ import java.util.ArrayList;
  *
  * @author Esteban
  */
-public class Partida {
+public class Partida implements java.io.Serializable{
 
     /**
      * Los jugadores que están jugando la partida
@@ -57,9 +57,19 @@ public class Partida {
     }
     
     public Jugador getJugador(String nombreJugador){
-        if(this.jugadoresPartida.indexOf(nombreJugador) == -1){
-            return null;//no lo halló
+        for (int i = 0; i < jugadoresPartida.size(); i++) {
+            Jugador get = jugadoresPartida.get(i);
+            if(get.getNombreJugador().equals(nombreJugador)){
+                return get;
+            }
         }
-        return this.jugadoresPartida.get(this.jugadoresPartida.indexOf(nombreJugador));
+        return null;
+    }
+    
+    public boolean agregarJugadores(ArrayList<Jugador> jugadores){
+        if(turno != -1){//la partida ya habia sido iniciada
+            return false;
+        }
+        return this.jugadoresPartida.addAll(jugadores);
     }
 }
